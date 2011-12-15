@@ -26,6 +26,9 @@ class VariableAssignment(object):
         self.value = value
         self.variable.assignments.append(self)
 
+    def __unicode__(self):
+        return u"@%d: %s: %s" % (self.line, self.variable.name, self.value)
+
     def is_overridden(self):
         return self.variable.assignments.index(self) < (len(self.variable.assignments) - 1)
 

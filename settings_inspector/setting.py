@@ -26,6 +26,9 @@ class Setting(object):
             self.parser = Parser(self)
             self.parse()
 
+    def __unicode__(self):
+        return u"%s -- %s" % (self.setting_module_path, self.setting_file_path)
+
     def get_module_paths(self, module_path):
         if module_path.startswith('.') and self.parent_setting is not None:
             leaf_setting_path = module_path.split('.')[-1]
