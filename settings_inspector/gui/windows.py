@@ -38,6 +38,11 @@ class ScrollWindow(object):
         self.current_column = self.current_indent * self.tab_size
         return self.current_column
 
+    def untab(self):
+        self.current_indent = self.current_indent - 1
+        self.current_column = self.current_indent * self.tab_size
+        return self.current_column
+
     def write(self, text, attr=curses.A_DIM):
             new_line = (self.current_line, self.current_column, text, attr)
             if self.current_line >= len(self.lines):
@@ -53,7 +58,10 @@ class ScrollWindow(object):
         start = self.scroll_line
         end = start + self.win.getmaxyx()[0]
         for line, column, text, attr in self.lines[start:end]:
-            self.win.addstr(line - start, column, text, attr)
+            try:
+                self.win.addstr(line - start, column, text, attr)
+            except curses.error:
+                pass
         self.win.refresh()
 
     def on_ch(self, cmd):
@@ -85,11 +93,23 @@ class SettingsWindow(ScrollWindow):
         if indentation > self.current_indent:
             self.tab()
         self.write(u"- %s" % parent_setting, attr=curses.A_BOLD)
-        self.add_variables(parent_setting)
-        new_indentation = indentation + 1
-        self.next_line()
-        for i, setting in enumerate(parent_setting.children_settings.values(), 1):
-            self.add_settings(setting, indentation=new_indentation)
+        self.dump_setting(parent_setting, indentation)
+
+    def dump_setting(self, setting, start=0, end=None, indentation=0):
+        if end is None:
+            end = len(setting.parser.lines)
+
+        lines = setting.parser.lines[start:end]
+        lineno_pad = len(str(end))
+
+        for lineno, line in enumerate(lines, 1):
+            self.next_line()
+            self.write(u"%s: %s" % (str(lineno).rjust(lineno_pad), line))
+            if lineno - 1 in setting.children_settings:
+                new_indentation = indentation + 1
+                self.next_line()
+                self.add_settings(setting.children_settings[lineno - 1], new_indentation)
+                self.untab()
 
     def add_variables(self, setting):
         self.tab()

@@ -7,7 +7,7 @@ class Setting(object):
     Properties:
 
     * parent_setting = Setting()
-    * children_setting = {}
+    * children_settings = {}
     * setting = <module>
     * setting_file_path = ''
     * parser = Parser()
