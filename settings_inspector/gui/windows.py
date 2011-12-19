@@ -1,51 +1,34 @@
-import sys
 import curses
-import locale
 
 
-class InspectorUI(object):
+class ScrollWindow(object):
     tab_size = 4
     current_line = 0
     current_indent = 0
     current_column = 0
 
-    def __init__(self, root_setting):
-        self.root_setting = root_setting
-        self.scroll_index = 0
-        locale.setlocale(locale.LC_ALL, '')
-        self.code = locale.getpreferredencoding()
-
-    # catch any weird termination situations
-    def __del__(self):
-        self.restore_screen()
+    def __init__(self, parent_ui, screen, lines=None, cols=None, begin_y=0, begin_x=0):
+        self.scroll_line = 0
+        self.screen = screen
+        self.parent_ui = parent_ui
+        if lines is not None and cols is not None:
+            self.win = screen.subwin(lines, cols, begin_y, begin_x)
+        else:
+            self.win = screen.subwin(begin_y, begin_x)
+        self.win.keypad(True)
+        self.lines = [(i, 0, '', curses.A_DIM) for i in range(self.win.getmaxyx()[0])]
+        return self
+        #self.render()
 
     def render(self):
-        try:
-            sys.exit(self._render())
-        finally:
-            self.restore_screen()
-    
-    def restore_screen(self):
-        curses.nocbreak()
-        curses.echo()
-        curses.endwin()
-
-    def _render(self):
-        self.stdscr = curses.initscr()
-        self.lines = [(i, 0, '', curses.A_DIM) for i in range(self.stdscr.getmaxyx()[0])]
-        self.stdscr.keypad(True)
-        curses.noecho()
-        curses.cbreak()
-
-        self.add_settings(self.root_setting)
         self.refresh()
         while 1:
-            self.on_ch(self.stdscr.getch())
+            self.on_ch(self.win.getch())
 
     def next_line(self):
         self.current_line = self.current_line + 1
         return self.current_line
-    
+
     def carriage_return(self):
         self.current_indent = self.current_column = 0
         return self.next_line()
@@ -66,12 +49,37 @@ class InspectorUI(object):
                 self.lines[self.current_line] = new_line
 
     def refresh(self):
-        self.stdscr.clear()
-        start = self.scroll_index
-        end = start + self.stdscr.getmaxyx()[0]
+        self.win.clear()
+        start = self.scroll_line
+        end = start + self.win.getmaxyx()[0]
         for line, column, text, attr in self.lines[start:end]:
-            self.stdscr.addstr(line - start, column, text, attr)
-        self.stdscr.refresh()
+            self.win.addstr(line - start, column, text, attr)
+        self.win.refresh()
+
+    def on_ch(self, cmd):
+        win_height = self.win.getmaxyx()[0]
+        if cmd in [curses.KEY_DOWN]:
+            if self.scroll_line + win_height < len(self.lines):
+                self.scroll_line += 1
+        elif cmd == curses.KEY_UP:
+            if self.scroll_line > 0:
+                self.scroll_line -= 1
+        elif cmd == 32:
+            tmp_scroll = self.scroll_line + win_height
+            if tmp_scroll + win_height > len(self.lines):
+                tmp_scroll = len(self.lines) - win_height
+            self.scroll_line = tmp_scroll
+
+        self.refresh()
+
+
+class SettingsWindow(ScrollWindow):
+    def __init__(self, settings, *args, **kwargs):
+        self.settings = settings
+        super(SettingsWindow, self).__init__(*args, **kwargs)
+        self.add_settings(self.settings)
+        self.render()
+        return self
 
     def add_settings(self, parent_setting, indentation=0):
         if indentation > self.current_indent:
@@ -88,19 +96,3 @@ class InspectorUI(object):
         for i, assignment in enumerate(setting.assignments):
             self.next_line()
             self.write(u"%s" % assignment)
-    
-    def on_ch(self, cmd):
-        win_height = self.stdscr.getmaxyx()[0]
-        if cmd in [curses.KEY_DOWN]:
-            if self.scroll_index+win_height < len(self.lines):
-                self.scroll_index += 1
-        elif cmd == curses.KEY_UP:
-            if self.scroll_index > 0:
-                self.scroll_index -= 1
-        elif cmd == 32:
-            tmp_scroll = self.scroll_index + win_height
-            if tmp_scroll+win_height > len(self.lines):
-                tmp_scroll = len(self.lines) - win_height
-            self.scroll_index = tmp_scroll
-
-        self.refresh()
