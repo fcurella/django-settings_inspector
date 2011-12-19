@@ -9,6 +9,7 @@ class ScrollWindow(object):
 
     def __init__(self, parent_ui, screen, lines=None, cols=None, begin_y=0, begin_x=0):
         self.scroll_line = 0
+        self.scroll_column = 0
         self.screen = screen
         self.parent_ui = parent_ui
         if lines is not None and cols is not None:
@@ -55,18 +56,20 @@ class ScrollWindow(object):
 
     def refresh(self):
         self.win.clear()
+        win_height, win_width = self.win.getmaxyx()
         start = self.scroll_line
-        end = start + self.win.getmaxyx()[0]
+        end = start + win_height
         for line, column, text, attr in self.lines[start:end]:
+            text = text.ljust(column)
             try:
-                self.win.addstr(line - start, column, text, attr)
+                self.win.addstr(line - start, 0, text[self.scroll_column:self.scroll_column + win_width], attr)
             except curses.error:
                 pass
         self.win.refresh()
 
     def on_ch(self, cmd):
-        win_height = self.win.getmaxyx()[0]
-        if cmd in [curses.KEY_DOWN]:
+        win_height, win_width = self.win.getmaxyx()
+        if cmd == curses.KEY_DOWN:
             if self.scroll_line + win_height < len(self.lines):
                 self.scroll_line += 1
         elif cmd == curses.KEY_UP:
@@ -77,6 +80,14 @@ class ScrollWindow(object):
             if tmp_scroll + win_height > len(self.lines):
                 tmp_scroll = len(self.lines) - win_height
             self.scroll_line = tmp_scroll
+
+        elif cmd == curses.KEY_LEFT:
+            if self.scroll_column > 0:
+                self.scroll_column -= 1
+        elif cmd == curses.KEY_RIGHT:
+            max_lines_length = max([len(line[2]) for line in self.lines])
+            if self.scroll_column + win_width < max_lines_length:
+                self.scroll_column += 1
 
         self.refresh()
 
