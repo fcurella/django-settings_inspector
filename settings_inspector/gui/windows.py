@@ -6,6 +6,7 @@ class ScrollWindow(object):
     current_line = 0
     current_indent = 0
     current_column = 0
+    current_highlight = -1
 
     def __init__(self, parent_ui, screen, lines=None, cols=None, begin_y=0, begin_x=0):
         self.scroll_line = 0
@@ -54,6 +55,29 @@ class ScrollWindow(object):
             else:
                 self.lines[self.current_line] = new_line
 
+    def highlight_line(self, lineno):
+        win_height, win_width = self.win.getmaxyx()
+        self.current_highlight = lineno
+        if self.current_highlight >= (self.scroll_line + win_height):
+            self.scroll_line = self.current_highlight - win_height + 1
+        elif self.current_highlight < self.scroll_line:
+            self.scroll_line = self.current_highlight
+
+        self.refresh()
+
+    def remove_highlight(self):
+        self.current_highlight = -1
+        self.refresh()
+
+    def highlight_next(self):
+        win_height, win_width = self.win.getmaxyx()
+        if (self.current_highlight + 1) < len(self.lines):
+            self.highlight_line(self.current_highlight + 1)
+
+    def highlight_prev(self):
+        if self.current_highlight > 0:
+            self.highlight_line(self.current_highlight - 1)
+
     def refresh(self):
         self.win.clear()
         win_height, win_width = self.win.getmaxyx()
@@ -61,33 +85,62 @@ class ScrollWindow(object):
         end = start + win_height
         for line, column, text, attr in self.lines[start:end]:
             text = (' ' * column) + text
+            if line == self.current_highlight:
+                attr = curses.A_STANDOUT
             try:
                 self.win.addstr(line - start, 0, text[self.scroll_column:self.scroll_column + win_width], attr)
             except curses.error:
                 pass
         self.win.refresh()
 
-    def on_ch(self, cmd):
+    def scroll_down(self):
         win_height, win_width = self.win.getmaxyx()
-        if cmd == curses.KEY_DOWN:
-            if self.scroll_line + win_height < len(self.lines):
-                self.scroll_line += 1
+        if self.scroll_line + win_height < len(self.lines):
+            self.scroll_line += 1
+            self.refresh()
+
+    def scroll_page_down(self):
+        win_height, win_width = self.win.getmaxyx()
+        tmp_scroll = self.scroll_line + win_height
+        if tmp_scroll + win_height > len(self.lines):
+            tmp_scroll = len(self.lines) - win_height
+        self.scroll_line = tmp_scroll
+        self.refresh()
+
+    def scroll_up(self):
+        if self.scroll_line > 0:
+            self.scroll_line -= 1
+            self.refresh()
+
+    def scroll_left(self):
+        if self.scroll_column > 0:
+            self.scroll_column -= 1
+            self.refresh()
+
+    def scroll_right(self):
+        win_height, win_width = self.win.getmaxyx()
+        max_lines_length = max([len(line[2]) for line in self.lines])
+        if self.scroll_column + win_width < max_lines_length:
+            self.scroll_column += 1
+            self.refresh()
+
+    def on_ch(self, cmd):
+        if cmd in [curses.KEY_DOWN, 10]:
+            self.scroll_down()
         elif cmd == curses.KEY_UP:
-            if self.scroll_line > 0:
-                self.scroll_line -= 1
+            self.scroll_up()
         elif cmd == 32:
-            tmp_scroll = self.scroll_line + win_height
-            if tmp_scroll + win_height > len(self.lines):
-                tmp_scroll = len(self.lines) - win_height
-            self.scroll_line = tmp_scroll
+            self.scroll_page_down()
 
         elif cmd == curses.KEY_LEFT:
-            if self.scroll_column > 0:
-                self.scroll_column -= 1
+            self.scroll_left()
         elif cmd == curses.KEY_RIGHT:
-            max_lines_length = max([len(line[2]) for line in self.lines])
-            if self.scroll_column + win_width < max_lines_length:
-                self.scroll_column += 1
+            self.scroll_right()
+
+        elif cmd == 120:
+            self.highlight_next()
+        elif cmd == 88:
+            self.highlight_prev()
 
         self.refresh()
 
