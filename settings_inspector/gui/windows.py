@@ -142,8 +142,6 @@ class ScrollWindow(object):
         elif cmd == 88:
             self.highlight_prev()
 
-        self.refresh()
-
 
 class SettingsWindow(ScrollWindow):
     def __init__(self, settings, *args, **kwargs):
