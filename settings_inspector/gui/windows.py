@@ -60,7 +60,7 @@ class ScrollWindow(object):
         start = self.scroll_line
         end = start + win_height
         for line, column, text, attr in self.lines[start:end]:
-            text = text.ljust(column)
+            text = (' ' * column) + text
             try:
                 self.win.addstr(line - start, 0, text[self.scroll_column:self.scroll_column + win_width], attr)
             except curses.error:
