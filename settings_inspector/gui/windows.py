@@ -100,26 +100,18 @@ class SettingsWindow(ScrollWindow):
         self.render()
         return self
 
-    def add_settings(self, parent_setting, indentation=0):
-        if indentation > self.current_indent:
-            self.tab()
-        self.write(u"- %s" % parent_setting, attr=curses.A_BOLD)
-        self.dump_setting(parent_setting, indentation)
-
-    def dump_setting(self, setting, start=0, end=None, indentation=0):
-        if end is None:
-            end = len(setting.parser.lines)
-
-        lines = setting.parser.lines[start:end]
-        lineno_pad = len(str(end))
+    def add_settings(self, setting):
+        self.write(u"- %s" % setting, attr=curses.A_BOLD)
+        lines = setting.parser.lines
+        lineno_pad = len(str(len(lines)))
 
         for lineno, line in enumerate(lines, 1):
             self.next_line()
             self.write(u"%s: %s" % (str(lineno).rjust(lineno_pad), line))
             if lineno - 1 in setting.children_settings:
-                new_indentation = indentation + 1
                 self.next_line()
-                self.add_settings(setting.children_settings[lineno - 1], new_indentation)
+                self.tab()
+                self.add_settings(setting.children_settings[lineno - 1])
                 self.untab()
 
     def add_variables(self, setting):
