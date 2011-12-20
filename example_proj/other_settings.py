@@ -1,0 +1,1 @@
+MYAPP_SETTING = True
