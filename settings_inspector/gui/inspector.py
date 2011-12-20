@@ -24,10 +24,12 @@ class InspectorUI(object):
     def restore_screen(self):
         curses.nocbreak()
         curses.echo()
+        curses.noraw()
         curses.endwin()
 
     def _render(self):
         self.stdscr = curses.initscr()
+        curses.raw()
         curses.noecho()
         curses.cbreak()
 
