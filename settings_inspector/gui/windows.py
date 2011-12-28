@@ -46,15 +46,20 @@ class ScrollWindow(object):
         self.current_column = self.current_indent * self.tab_size
         return self.current_column
 
-    def write(self, text, attr=curses.A_DIM):
-            new_line = (self.current_line, self.current_column, text, attr)
-            if self.current_line >= len(self.lines):
-                for missing in range(self.current_line - len(self.lines)):
-                    empty_line = (len(self.lines) + missing, 0, '', curses.A_DIM)
-                    self.lines.append(empty_line)
-                self.lines.append(new_line)
-            else:
-                self.lines[self.current_line] = new_line
+    def write(self, text, attr=curses.A_DIM, current_line=None, current_column=None):
+        if current_line is None:
+            current_line = self.current_line
+        if current_column is None:
+            current_column = self.current_column
+
+        new_line = (current_line, current_column, text, attr)
+        if current_line >= len(self.lines):
+            for missing in range(current_line - len(self.lines)):
+                empty_line = (len(self.lines) + missing, 0, '', curses.A_DIM)
+                self.lines.append(empty_line)
+            self.lines.append(new_line)
+        else:
+            self.lines[current_line] = new_line
 
     def highlight_line(self, lineno):
         win_height, win_width = self.win.getmaxyx()
