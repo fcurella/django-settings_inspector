@@ -158,24 +158,42 @@ class ScrollWindow(object):
 
 class SettingsWindow(ScrollWindow):
     def __init__(self, settings, *args, **kwargs):
-        self.settings = settings
         super(SettingsWindow, self).__init__(*args, **kwargs)
-        self.add_settings(self.settings)
+        self.root_settings = settings
+        self.reset()
         self.render()
         return self
 
-    def add_settings(self, setting):
-        self.write(u"- %s" % setting, attr=curses.A_BOLD)
+    def reset(self):
+        self.settings = {}
+        self.current_line = 0
+        self.current_column = 0
+        self.add_settings(self.root_settings)
+        self.refresh()
+
+    def lineno_pad(self, setting):
         lines = setting.parser.lines
-        lineno_pad = len(str(len(lines)))
+        return len(str(len(lines))) + 1
+
+    def add_settings(self, setting, line=0):
+        self.settings[line] = (setting, self.current_column)
+        title = u"- %s" % setting
+        self.write(title, attr=curses.A_BOLD)
+        lineno_pad = self.lineno_pad(setting)
+        lines = setting.parser.lines
 
         for lineno, line in enumerate(lines, 1):
             self.next_line()
-            self.write(u"%s: %s" % (str(lineno).rjust(lineno_pad), line))
+            text = u"%s: %s" % (str(lineno).rjust(lineno_pad), line)
+
+            assignment = setting.assignments_lines.get(lineno - 1, False)
+            if assignment and assignment.is_overridden():
+                text = '*' + text[1:]
+            self.write(text)
             if lineno - 1 in setting.children_settings:
                 self.next_line()
                 self.tab()
-                self.add_settings(setting.children_settings[lineno - 1])
+                self.add_settings(setting.children_settings[lineno - 1], self.current_line)
                 self.untab()
 
     def add_variables(self, setting):

@@ -1,5 +1,6 @@
 import os
 from .parser import Parser
+from .variables import Registry
 
 
 class Setting(object):
@@ -20,10 +21,14 @@ class Setting(object):
             setting_module_path = os.environ['DJANGO_SETTINGS_MODULE']
         parent_setting_path, leaf_setting_path = self.get_module_paths(setting_module_path)
         self.setting = getattr(__import__(parent_setting_path), leaf_setting_path)
+
+        if variable_registry is None:
+            variable_registry = Registry()
+        self.variable_registry = variable_registry
+
         if self.setting is not None:
             self.setting_module_path = setting_module_path
             self.setting_file_path = self.get_settings_filepath()
-            self.parser = Parser(self)
             self.parse()
 
     def __unicode__(self):
@@ -37,12 +42,14 @@ class Setting(object):
         return module_path, module_path.split('.')[-1]
 
     def parse(self):
+        self.parser = Parser(self)
         imports = self.parser.imports
         for line, module_path in imports:
             module_absolute_path = self.get_module_paths(module_path)[0]
-            self.children_settings[line] = Setting(module_absolute_path, parent_setting=self)
+            self.children_settings[line] = Setting(module_absolute_path, parent_setting=self, variable_registry=self.variable_registry)
 
         self.assignments = self.parser.assignments
+        self.assignments_lines = dict([(assignment.line, assignment) for assignment in self.assignments])
 
     def get_settings_filepath(self):
         return self.setting.__file__.rsplit('.', 1)[0] + '.py'

@@ -1,5 +1,5 @@
 import re
-from .variables import VariableAssignment, variable_registry
+from .variables import VariableAssignment
 
 
 regex_import = re.compile('from\s+(\S+)\s+import\s+\*')
@@ -10,14 +10,19 @@ regex_import2 = re.compile("(try:)?\s*(from\s+(\S+)\s+import\s+\*)\s*(except.*)?
 class Parser(object):
     def __init__(self, setting):
         self.setting = setting
+        self.lines = None
+        self.reset()
+
+    def reset(self):
         self.imports = []
         self.assignments = []
         self.parse()
 
     def parse(self):
-        fh = open(self.setting.setting_file_path)
-        self.lines = fh.readlines()
-        fh.close()
+        if self.lines is None:
+            fh = open(self.setting.setting_file_path)
+            self.lines = fh.readlines()
+            fh.close()
         self.clean_imports()
         self.find_stuff()
 
@@ -27,7 +32,7 @@ class Parser(object):
             for module in self.get_modules(line):
                 self.imports.append((l, module))
             for name in self.find_names(line, names):
-                variable = variable_registry.variables[name]
+                variable = self.setting.variable_registry.variables[name]
                 self.assignments.append(VariableAssignment(setting=self.setting, variable=variable, line=l, value=self.get_variable_value(name)))
 
     def find_text(self, text):
@@ -37,6 +42,7 @@ class Parser(object):
     def clean_imports(self):
         raw_settings = ''.join(self.lines)
         clean_settings_lines = regex_import2.sub('', raw_settings)
+
         fake_globals = {
             '__file__': self.setting.setting_file_path
         }

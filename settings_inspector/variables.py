@@ -3,7 +3,8 @@ from collections import defaultdict
 
 class VariableDefaultDict(defaultdict):
     def __missing__(self, key):
-        return Variable(name=key)
+        self[key] = Variable(name=key)
+        return self[key]
 
 
 class Variable(object):
@@ -33,8 +34,11 @@ class VariableAssignment(object):
         return self.variable.assignments.index(self) < (len(self.variable.assignments) - 1)
 
 
+class VariableGroup(object):
+    def __init__(self, name, variables=None):
+        self.name = name
+        self.variables = variables or []
+
+
 class Registry(object):
     variables = VariableDefaultDict()
-
-
-variable_registry = Registry()
