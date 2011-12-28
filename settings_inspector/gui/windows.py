@@ -7,6 +7,7 @@ class ScrollWindow(object):
     current_indent = 0
     current_column = 0
     current_highlight = -1
+    highlight = False
 
     def __init__(self, parent_ui, screen, lines=None, cols=None, begin_y=0, begin_x=0):
         self.scroll_line = 0
@@ -58,6 +59,7 @@ class ScrollWindow(object):
     def highlight_line(self, lineno):
         win_height, win_width = self.win.getmaxyx()
         self.current_highlight = lineno
+        self.highlight = True
         if self.current_highlight >= (self.scroll_line + win_height):
             self.scroll_line = self.current_highlight - win_height + 1
         elif self.current_highlight < self.scroll_line:
@@ -66,17 +68,23 @@ class ScrollWindow(object):
         self.refresh()
 
     def remove_highlight(self):
-        self.current_highlight = -1
+        self.highlight = False
         self.refresh()
 
     def highlight_next(self):
         win_height, win_width = self.win.getmaxyx()
         if (self.current_highlight + 1) < len(self.lines):
-            self.highlight_line(self.current_highlight + 1)
+            if self.highlight:
+                self.highlight_line(self.current_highlight + 1)
+            else:
+                self.highlight_line(self.current_highlight)
 
     def highlight_prev(self):
         if self.current_highlight > 0:
-            self.highlight_line(self.current_highlight - 1)
+            if self.highlight:
+                self.highlight_line(self.current_highlight - 1)
+            else:
+                self.highlight_line(self.current_highlight)
 
     def refresh(self):
         self.win.clear()
@@ -85,7 +93,7 @@ class ScrollWindow(object):
         end = start + win_height
         for line, column, text, attr in self.lines[start:end]:
             text = (' ' * column) + text
-            if line == self.current_highlight:
+            if line == self.current_highlight and self.highlight:
                 attr = curses.A_STANDOUT
             try:
                 self.win.addstr(line - start, 0, text[self.scroll_column:self.scroll_column + win_width], attr)
