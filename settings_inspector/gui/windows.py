@@ -150,9 +150,9 @@ class ScrollWindow(object):
         elif cmd == curses.KEY_RIGHT:
             self.scroll_right()
 
-        elif cmd == 120:
+        elif cmd == 120:  # 'x'
             self.highlight_next()
-        elif cmd == 88:
+        elif cmd == 88:  # 'shift+X'
             self.highlight_prev()
 
 
