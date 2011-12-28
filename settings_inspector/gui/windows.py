@@ -6,7 +6,7 @@ class ScrollWindow(object):
     current_line = 0
     current_indent = 0
     current_column = 0
-    current_highlight = -1
+    current_highlight = 0
     highlight = False
 
     def __init__(self, parent_ui, screen, lines=None, cols=None, begin_y=0, begin_x=0):
