@@ -13,8 +13,10 @@ class Setting(object):
     * setting_file_path = ''
     * parser = Parser()
     * assignments = [VariableAssignment(),]
+    * modified = False
     """
-    def __init__(self, setting_module_path, parent_setting=None):
+    def __init__(self, setting_module_path, parent_setting=None, variable_registry=None, modified=False):
+        self.modified = modified
         self.parent_setting = parent_setting
         self.children_settings = {}
         if setting_module_path == 'django.conf':
@@ -32,7 +34,10 @@ class Setting(object):
             self.parse()
 
     def __unicode__(self):
-        return u"%s -- %s" % (self.setting_module_path, self.setting_file_path)
+        title = u"%s -- %s" % (self.setting_module_path, self.setting_file_path)
+        if self.modified:
+            title += u' *'
+        return title
 
     def get_module_paths(self, module_path):
         if module_path.startswith('.') and self.parent_setting is not None:
@@ -62,3 +67,8 @@ class Setting(object):
         for setting in self.children_settings.values():
             stack.extend(setting.get_variable_history(varname))
         return stack
+
+    def edit_line(self, text, line):
+        self.modified = True
+        self.parser.lines[line] = text + '\n'
+        self.parser.reset()

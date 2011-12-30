@@ -1,7 +1,7 @@
 import sys
 import curses
 import locale
-from .windows import SettingsWindow
+from .windows.settings import SettingsWindow
 
 
 class InspectorUI(object):
