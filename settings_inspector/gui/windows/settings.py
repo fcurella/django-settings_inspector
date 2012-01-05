@@ -1,6 +1,7 @@
 import curses
 from bisect import bisect_right
 from .base import ScrollWindow
+from settings_inspector.gui import keys
 
 
 class SettingsWindow(ScrollWindow):
@@ -43,12 +44,6 @@ class SettingsWindow(ScrollWindow):
                 self.add_settings(setting.children_settings[lineno - 1], self.current_line)
                 self.untab()
 
-    def add_variables(self, setting):
-        self.tab()
-        for i, assignment in enumerate(setting.assignments):
-            self.next_line()
-            self.write(u"%s" % assignment)
-
     def setting_line(self, setting):
         return [line for (line, _setting) in self.settings.items() if _setting[0] == setting][0]
 
@@ -56,3 +51,9 @@ class SettingsWindow(ScrollWindow):
         k_no = bisect_right(self.settings.keys(), lineno) - 1
         k = self.settings.keys()[k_no]
         return self.settings[k][0]
+
+    def on_ch(self, cmd):
+        if cmd == keys.LOWERCASE_V:
+            self.parent_ui.show_variables()
+        else:
+            super(SettingsWindow, self).on_ch(cmd)

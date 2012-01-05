@@ -1,4 +1,5 @@
 import curses
+from settings_inspector.gui import keys
 
 
 class ScrollWindow(object):
@@ -21,7 +22,6 @@ class ScrollWindow(object):
         self.win.keypad(True)
         self.lines = [(i, 0, '', curses.A_DIM) for i in range(self.win.getmaxyx()[0])]
         return self
-        #self.render()
 
     def render(self):
         self.refresh()
@@ -142,7 +142,7 @@ class ScrollWindow(object):
             self.scroll_down()
         elif cmd == curses.KEY_UP:
             self.scroll_up()
-        elif cmd == 32:
+        elif cmd == keys.SPACE:
             self.scroll_page_down()
 
         elif cmd == curses.KEY_LEFT:
@@ -150,7 +150,7 @@ class ScrollWindow(object):
         elif cmd == curses.KEY_RIGHT:
             self.scroll_right()
 
-        elif cmd == 120:  # 'x'
+        elif cmd == keys.LOWERCASE_X:
             self.highlight_next()
-        elif cmd == 88:  # 'shift+X'
+        elif cmd == keys.UPPERCASE_X:
             self.highlight_prev()

@@ -2,6 +2,7 @@ import sys
 import curses
 import locale
 from .windows.settings import SettingsWindow
+from .windows.variables import VariablesWindow
 
 
 class InspectorUI(object):
@@ -26,6 +27,14 @@ class InspectorUI(object):
         curses.echo()
         curses.noraw()
         curses.endwin()
+    
+    def show_variables(self):
+        self.win = VariablesWindow(self.root_setting, parent_ui=self, screen=self.stdscr)
+        self.stdscr.refresh()
+    
+    def show_settings(self):
+        self.win = SettingsWindow(self.root_setting, parent_ui=self, screen=self.stdscr)
+        self.stdscr.refresh()
 
     def _render(self):
         self.stdscr = curses.initscr()
@@ -33,5 +42,4 @@ class InspectorUI(object):
         curses.noecho()
         curses.cbreak()
 
-        self.win = SettingsWindow(self.root_setting, parent_ui=self, screen=self.stdscr)
-        self.stdscr.refresh()
+        self.show_settings()

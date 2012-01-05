@@ -18,6 +18,10 @@ class Variable(object):
                 return self.assignments[:i]
         return []
 
+    @property
+    def value(self):
+        return self.assignments[-1].value
+
 
 class VariableAssignment(object):
     def __init__(self, variable, setting, line, value):
